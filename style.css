@@ -31,7 +31,10 @@ a { color: inherit; }
   transform-origin: 0 0; will-change: transform;
   display: block;
 }
-video.layer { object-fit: cover; }
+/* Sukuna: Standbild unten, darüber der 16:9-Loop (oberer Bildteil), unten weich ausgeblendet */
+#l-sukuna img, #l-sukuna video { position: absolute; left: 0; top: 0; width: 1536px; display: block; }
+#l-sukuna img { height: 1024px; }
+#l-sukuna video { height: 864px; object-fit: fill; -webkit-mask-image: linear-gradient(180deg, #000 86%, transparent 100%); mask-image: linear-gradient(180deg, #000 86%, transparent 100%); }
 .masked { visibility: hidden; }
 
 .shade { position: absolute; inset: 0; pointer-events: none; }
@@ -117,7 +120,7 @@ video.layer { object-fit: cover; }
 .dk-sub { font-size: 12px; font-weight: 600; letter-spacing: .5em; text-transform: uppercase; color: var(--muted); }
 
 /* ---------- 02 Gojo ---------- */
-.gojo { height: 620vh; position: relative; background: var(--night); }
+.gojo { height: 780vh; position: relative; background: var(--night); }
 .shade-gojo {
   background: linear-gradient(0deg, rgba(9,9,11,.75) 0%, rgba(9,9,11,0) 30%);
   opacity: var(--sh, 1);
@@ -144,7 +147,7 @@ video.layer { object-fit: cover; }
 
 /* ---------- 03 Nobara ---------- */
 .nobara { height: 440vh; position: relative; background: var(--night); }
-#seq { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.seqc { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .shade-nobara { background: linear-gradient(0deg, rgba(9,9,11,.82) 0%, rgba(9,9,11,0) 34%), linear-gradient(90deg, rgba(9,9,11,.35) 0%, rgba(9,9,11,0) 40%); }
 .flash {
   position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;

@@ -1,6 +1,7 @@
 // Jujutsu Kaisen – Scroll-Hommage Nº 02.
 // Sukuna (Hero) → „領域展開“ → Gojo: Zoom vom Porträt ins Auge, die Iris öffnet sich zur Infinite Void →
-// Nobara: Hammerschlag beim Scrollen → Besetzung → Abspann. Weiches Scrollen über Lenis.
+// Nobara: Kling-Clip als Bildfolge, das Scrollen steuert den Hammerschlag Bild für Bild → Besetzung → Abspann.
+// Weiches Scrollen über Lenis.
 // Alle Bildebenen liegen in natürlicher Größe (1536 × 1024) und werden per transform platziert.
 (() => {
   const qs = new URLSearchParams(location.search);
@@ -14,9 +15,9 @@
   const EYE_K = 0.16;                    // Iris Porträt (r 32) : Iris Nahaufnahme (r 200)
   const PUPIL_R = 30;
   const VOID_C = [775, 495];
-  const NAIL = [420, 352], IMPACT = [392, 330];
-  // Hochformat: beim Ausholen Nobara im Bild, beim Treffer der Einschlag
-  const NOBARA_P = [1060, 300], IMPACT_P = [470, 330];
+  // Nobara-Bildfolge (bilder/nobara-seq, aus dem Kling-Clip ab 1,6 s): 83 Bilder, Aufprall bei Bild 35
+  const SEQ_N = 83, SEQ_HIT = 35, SEQ_W = 1600, SEQ_H = 902;
+  const P_START = 0.08, P_HIT = 0.55, P_END = 0.92;
 
   const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
   const seg = (t, a, b) => clamp((t - a) / (b - a));
@@ -37,7 +38,6 @@
   $$('[data-sec]').forEach((s) => { sec[s.dataset.sec] = s; });
   const L = {
     sukuna: $('#l-sukuna'), portrait: $('#l-portrait'), eye: $('#l-eye'), void: $('#l-void'),
-    raise: $('#l-raise'), hit: $('#l-hit'),
   };
   const heroLines = $$('.hero .ln');
   const dk = $$('.dk span'), dkSub = $$('.dk-sub .ln');
@@ -49,6 +49,38 @@
   let vw = innerWidth, vh = innerHeight;
   const start = performance.now();
   let last = start, impactAt = -1e9, wasHit = false;
+
+  const seqCvs = $('#seq'), seqG = seqCvs.getContext('2d');
+  const seq = Array.from({ length: SEQ_N }, (_, i) => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = `bilder/nobara-seq/${String(i).padStart(3, '0')}.webp`;
+    return img;
+  });
+  const seqReady = Promise.all(seq.map((img) => (img.complete ? 0 : new Promise((r) => { img.onload = img.onerror = r; }))));
+  let seqKey = '';
+  function sizeSeq() {
+    const d = Math.min(devicePixelRatio || 1, 2);
+    seqCvs.width = Math.round(vw * d); seqCvs.height = Math.round(vh * d);
+    seqKey = '';
+  }
+  // Bild i mit Zoom z so zeichnen, dass Bildpunkt (fx, fy) (0..1) auf Bildschirmpunkt (sx, sy) liegt
+  function drawSeq(i, z, fx, fy, sx, sy, dx, dy) {
+    let k = i;
+    while (k > 0 && !(seq[k].complete && seq[k].naturalWidth)) k--;   // nächstes geladenes Bild davor
+    const img = seq[k];
+    if (!img.complete || !img.naturalWidth) return;
+    const key = [k, z.toFixed(4), fx.toFixed(3), sx | 0, sy | 0, dx | 0, dy | 0, vw, vh].join('|');
+    if (key === seqKey) return;
+    seqKey = key;
+    const d = seqCvs.width / vw;
+    const s = Math.max(vw / SEQ_W, vh / SEQ_H) * z;
+    const w = SEQ_W * s, h = SEQ_H * s;
+    const x = clamp(sx - fx * w, vw - w, 0) + dx, y = clamp(sy - fy * h, vh - h, 0) + dy;
+    seqG.setTransform(d, 0, 0, d, 0, 0);
+    seqG.fillStyle = '#09090b'; seqG.fillRect(0, 0, vw, vh);
+    seqG.drawImage(img, x, y, w, h);
+  }
 
   const prog = (el) => { const r = el.getBoundingClientRect(); const t = r.height - vh; return t > 0 ? clamp(-r.top / t) : 0; };
   const enter = (el) => clamp((vh - el.getBoundingClientRect().top) / vh);
@@ -152,30 +184,32 @@
 
     /* ---------- 03 Nobara ---------- */
     if (onScreen(sec.nobara)) {
-      const s = sec.nobara, p = prog(s), c = cover();
+      const s = sec.nobara, p = prog(s);
       lines(nA, seg(enter(s), 0.55, 1));
-      const hit = p >= 0.46;
+      // Scrollposition → Bild: bis zum Aufprall und danach je eigener Abschnitt, damit der Treffer immer bei P_HIT liegt
+      const f = p < P_HIT
+        ? seg(p, P_START, P_HIT) * SEQ_HIT
+        : SEQ_HIT + seg(p, P_HIT, P_END) * (SEQ_N - 1 - SEQ_HIT);
+      const frame = Math.min(SEQ_N - 1, Math.round(f));
+      const hit = frame >= SEQ_HIT;
       if (hit && !wasHit) impactAt = now;
       wasHit = hit;
-      const ago = SHOT ? parseFloat(qs.get('ago') || '2000') : now - impactAt;
-      const punch = hit ? Math.exp(-ago / 150) : 0;
-      const shake = hit ? Math.exp(-ago / 120) : 0;
-      const dx = Math.sin(ago * 0.11) * 16 * shake, dy = Math.cos(ago * 0.087) * 12 * shake;
-      vis(L.raise, !hit); vis(L.hit, hit);
-      if (!hit) {
-        const k = E.inOut(seg(p, 0, 0.46));
-        if (vh > vw) zoomTo(L.raise, 1.0 + 0.1 * k, NOBARA_P, 1, vw * 0.5, vh * 0.36, { align: [0.5, 0] });
-        else zoomTo(L.raise, 1.0 + 0.1 * k, NAIL, k * 0.5, vw * 0.36, vh * 0.42, { align: [0.5, 0] });
+      let ago = now - impactAt;
+      if (SHOT) ago = qs.has('pps') ? (p - P_HIT) / parseFloat(qs.get('pps')) * 1000 : parseFloat(qs.get('ago') || '2000');
+      const shake = hit ? Math.exp(-ago / 110) : 0;
+      const punch = hit ? Math.exp(-ago / 160) : 0;
+      const dx = Math.sin(ago * 0.11) * 14 * shake, dy = Math.cos(ago * 0.087) * 10 * shake;
+      const push = 0.06 * E.inOut(seg(p, P_START, P_END));
+      if (vh > vw) {
+        // Hochformat: Kamera bei Nobara, ab dem Aufprall harter Schnitt auf den Einschlag
+        const fx = hit ? 0.27 : mix(0.66, 0.6, seg(f, 22, SEQ_HIT));
+        drawSeq(frame, 1 + push + 0.05 * punch, fx, 0.4, vw * 0.5, vh * 0.42, dx, dy);
       } else {
-        const k = E.out2(seg(p, 0.46, 1));
-        if (vh > vw) zoomTo(L.hit, 1.1 - 0.1 * k + 0.07 * punch, IMPACT_P, 1, vw * 0.5, vh * 0.36, { dx, dy, align: [0.5, 0] });
-        else zoomTo(L.hit, 1.1 - 0.1 * k + 0.07 * punch, IMPACT, 0.5 * (1 - k), vw * 0.36, vh * 0.42, { dx, dy, align: [0.5, 0] });
+        drawSeq(frame, 1.02 + push + 0.05 * punch, 0.42, 0.42, vw * 0.42, vh * 0.42, dx, dy);
       }
-      const fx = hit ? (L.hit._fx || 28) : 28;
-      set(s, '--flash', hit ? Math.exp(-ago / 170) : 0);
+      set(s, '--flash', hit ? 0.45 * Math.exp(-ago / 170) : 0);
       set(s, '--hit', hit ? 1 : 0);
       set(s, '--slam', hit ? Math.exp(-ago / 140) : 0);
-      void fx; void c;
     }
 
     /* ---------- Besetzung ---------- */
@@ -191,7 +225,8 @@
     });
   }
 
-  addEventListener('resize', () => { vw = innerWidth; vh = innerHeight; });
+  addEventListener('resize', () => { vw = innerWidth; vh = innerHeight; sizeSeq(); });
+  sizeSeq();
 
   // Liegt zu einem Bild ein Video in bilder/video/, ersetzt es das Standbild (stumm, Endlosschleife)
   const videos = [];
@@ -233,8 +268,9 @@
 
   if (SHOT) {
     const imgs = $$('img');
-    Promise.all([document.fonts.ready, ...imgs.map((i) => (i.complete ? 0 : new Promise((r) => { i.onload = i.onerror = r; })))]).then(() => {
-      window.scrollTo(0, parseFloat(qs.get('t')) * vh);
+    Promise.all([document.fonts.ready, seqReady, ...imgs.map((i) => (i.complete ? 0 : new Promise((r) => { i.onload = i.onerror = r; })))]).then(() => {
+      const target = qs.get('sec') && sec[qs.get('sec')];
+      window.scrollTo(0, target ? target.offsetTop + parseFloat(qs.get('p') || '0') * (target.offsetHeight - vh) : parseFloat(qs.get('t')) * vh);
       requestAnimationFrame(() => {
         update(performance.now(), 0.016);
         window.__dbg = { vw, vh, y: scrollY };

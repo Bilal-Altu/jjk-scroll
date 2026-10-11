@@ -88,7 +88,7 @@ ws.close(); edge.kill(); server.close();
 await pause(300);
 try { rmSync(profil, { recursive: true, force: true }); } catch {}
 
-if (files.length > 1) {
+if (files.length > 1 && !args.includes('--nosheet')) {
   const rows = Math.ceil(files.length / COLS);
   const inputs = files.flatMap((f) => ['-i', f]);
   const th = Math.round(TW * BH / BW / 2) * 2;

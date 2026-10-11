@@ -1,2 +1,4 @@
 _dev/out/
 bilder/quelle/
+bilder/video/*-original.mp4
+_dev/*.mp4

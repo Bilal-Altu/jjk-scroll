@@ -143,8 +143,8 @@ video.layer { object-fit: cover; }
 .g-copy { margin-top: 2.4vh; max-width: 320px; font-size: 14px; line-height: 1.55; color: var(--bone); opacity: .85; }
 
 /* ---------- 03 Nobara ---------- */
-.nobara { height: 360vh; position: relative; background: var(--night); }
-#l-hit { visibility: hidden; }
+.nobara { height: 440vh; position: relative; background: var(--night); }
+#seq { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .shade-nobara { background: linear-gradient(0deg, rgba(9,9,11,.82) 0%, rgba(9,9,11,0) 34%), linear-gradient(90deg, rgba(9,9,11,.35) 0%, rgba(9,9,11,0) 40%); }
 .flash {
   position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
@@ -204,6 +204,7 @@ video.layer { object-fit: cover; }
   .g-void-t .big { font-size: 18vw; }
   .n-a .big { font-size: 12vw; }
   .n-b .big { font-size: 18.5vw; }
+  .n-b { transform: scale(calc(1 + var(--slam, 0) * .1)); }
   .n-k { font-size: 6vw; }
   .rows li { grid-template-columns: 10vw 1fr; }
   .rows .nm { font-size: 8.6vw; }

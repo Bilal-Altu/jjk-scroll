@@ -124,7 +124,7 @@
       heroLines.forEach((l, i) => set(l, '--r', E.out3(clamp((intro - 0.2 - i * 0.12) / 0.9))));
       set(s, '--kin', E.out3(clamp((intro - 0.75) / 0.9)));
       const settle = 0.06 * (1 - E.out3(clamp(intro / 1.6)));
-      zoomTo(L.sukuna, 1.02 + settle + 0.32 * E.inOut(p), SUKUNA_FACE, tall ? 1 : E.inOut(p), vw / 2, vh * (tall ? 0.24 : 0.3));
+      zoomTo(L.sukuna, 1.0 + settle + 0.12 * E.inOut(p), SUKUNA_FACE, tall ? 1 : E.inOut(p), vw / 2, vh * (tall ? 0.24 : 0.3));
       set(s, '--out', E.in2(seg(p, 0.04, 0.42)));
       set(s, '--dim', 0.75 * E.in2(seg(p, 0.45, 1)));
     }

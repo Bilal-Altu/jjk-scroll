@@ -1,6 +1,6 @@
 // Jujutsu Kaisen – Scroll-Hommage Nº 02.
-// Sukuna (Hero, Kling-Loop) → „領域展開“ → Gojo: Kling-Clip vom Porträt ins Auge, Bild für Bild per Scroll,
-// danach öffnet sich die Iris zur Infinite Void → Nobara: Kling-Clip, das Scrollen führt den Hammerschlag →
+// Sukuna (Hero, Kling-Loop) → „領域展開“ → Gojo: zwei Kling-Clips als ein Flug, Bild für Bild per Scroll –
+// vom Porträt ins Auge und durch die Pupille in die Infinite Void → Nobara: Kling-Clip, das Scrollen führt den Hammerschlag →
 // Besetzung → Abspann. Weiches Scrollen über Lenis.
 // Bildebenen liegen in natürlicher Größe (1536 × 1024) und werden per transform platziert;
 // Clips liegen als Einzelbilder vor und werden auf einem Canvas gezeichnet.
@@ -11,14 +11,11 @@
   const IW = 1536, IH = 1024;
   // Messpunkte in Bildpixeln
   const SUKUNA_FACE = [655, 150];
-  const EYE_PUPIL = [765, 445];          // Pupille in der Augen-Nahaufnahme (03)
-  const EYE_CLIP_TOP = 13;               // der Gojo-Clip endet auf 03, Ausschnitt 1536 × 864 ab y = 13
-  const PUPIL_R = 30;
-  const VOID_C = [775, 495];
 
-  // Gojo-Clip (bilder/gojo-seq): 95 Bilder; ruhig bis 26, Kameraflug 26–88, Auge steht ab 88
-  const G = { n: 95, w: 1920, h: 1080, calm: 26, flyEnd: 88 };
-  const GP = { calm: 0.22, fly: 0.5, last: 0.55, eyeEnd: 0.76 };
+  // Gojo-Folge (bilder/gojo-seq): Clip 2 (0–94) und Clip 3 (95–197) hintereinander.
+  // Ruhig bis 26, Flug ins Auge bis 88, Auge steht bis 94, Pupille öffnet sich, Ankunft in der Void bei 178.
+  const G = { n: 198, w: 1920, h: 1080, calm: 26, flyEnd: 88, eye: 94, portal: 178 };
+  const GP = { calm: 0.18, fly: 0.4, eye: 0.44, portal: 0.7, last: 0.8 };
   // Nobara-Clip (bilder/nobara-seq): 83 Bilder, Aufprall bei Bild 35
   const N = { n: 83, w: 1600, h: 902, hit: 35 };
   const NP = { start: 0.08, hit: 0.55, end: 0.92 };
@@ -40,7 +37,7 @@
 
   const sec = {};
   $$('[data-sec]').forEach((s) => { sec[s.dataset.sec] = s; });
-  const L = { sukuna: $('#l-sukuna'), eye: $('#l-eye'), void: $('#l-void') };
+  const L = { sukuna: $('#l-sukuna') };
   const heroLines = $$('.hero .ln');
   const dk = $$('.dk span'), dkSub = $$('.dk-sub .ln');
   const gIntro = $$('.g-intro .ln'), gVoid = $$('.g-void .ln');
@@ -117,12 +114,6 @@
     const nx = (vw - IW * s0) / 2 + fx * s0, ny = (vh - IH * s0) / 2 + fy * s0;
     place(el, s, fx, fy, mix(nx, tx, k), mix(ny, ty, k));
   }
-  function mask(el, cx, cy, inner, outer) {
-    const m = `radial-gradient(circle at ${cx}px ${cy}px, #000 ${inner}px, transparent ${outer}px)`;
-    el.style.webkitMaskImage = m; el.style.maskImage = m;
-  }
-  function noMask(el) { el.style.webkitMaskImage = 'none'; el.style.maskImage = 'none'; }
-
   function update(now, dt) {
     const intro = SHOT ? 3 : (now - start) / 1000;
     const tall = vh > vw;
@@ -155,47 +146,23 @@
       const s = sec.gojo, p = prog(s);
       lines(gIntro, seg(enter(s), 0.55, 1));
       set(s, '--qin', E.out2(seg(enter(s), 0.85, 1)));
-      set(s, '--gout', E.in2(seg(p, 0.12, 0.2)));
-      set(s, '--sh', 1 - seg(p, 0.12, 0.2));
+      set(s, '--gout', E.in2(seg(p, 0.1, 0.17)));
+      set(s, '--sh', 1 - seg(p, 0.1, 0.17));
 
-      // Teil 1: der Clip – ruhige Phase, dann der Kameraflug ins Auge
-      const f = p < GP.calm ? seg(p, 0, GP.calm) * G.calm
-        : p < GP.fly ? G.calm + seg(p, GP.calm, GP.fly) * (G.flyEnd - G.calm)
-        : G.flyEnd + seg(p, GP.fly, GP.last) * (G.n - 1 - G.flyEnd);
-      const fk = seg(f, G.calm, G.flyEnd);
-      // Hochformat: vom Gesicht (rechtes Auge) zur Bildmitte, wo der Clip auf dem Auge landet
-      const fx = tall ? mix(0.58, 0.498, fk) : 0.5, fy = tall ? mix(0.42, 0.5, fk) : 0.5;
-      const eyeOn = p >= GP.last;
-      vis(gojoCvs, !eyeOn);
-      const pl = eyeOn ? gojoSeq.place(1, fx, fy, vw / 2, vh / 2) : gojoSeq.draw(Math.round(f), 1, fx, fy, vw / 2, vh / 2);
-
-      // Teil 2: dasselbe Auge als Standbild, Zoom in die Pupille, die Void öffnet sich daraus
-      const s0 = pl.w / IW;                                   // Maßstab der Augen-Nahaufnahme, deckungsgleich zum Clip
-      const P0 = [pl.x + EYE_PUPIL[0] * s0, pl.y + (EYE_PUPIL[1] - EYE_CLIP_TOP) * s0];
-      const Z = Math.exp(mix(0, Math.log(16), E.sine(seg(p, GP.last, GP.eyeEnd))));
-      const sE = s0 * Z;
-      const kc = E.out2(seg(Math.log(Z), 0, Math.log(3)));
-      const ex = mix(P0[0], vw / 2, kc), ey = mix(P0[1], vh / 2, kc);
-      const rScreen = PUPIL_R * sE * Math.pow(Z / 2.2, 2);
-      const full = Z > 2.2 && rScreen > Math.hypot(vw, vh);
-      vis(L.eye, eyeOn && !full);
-      if (eyeOn && !full) place(L.eye, sE, EYE_PUPIL[0], EYE_PUPIL[1], ex, ey, { keep: false });
-
-      const voidOn = eyeOn && Z > 2.2;
-      vis(L.void, voidOn);
-      if (voidOn) {
-        const rot = 0.1 * seg(Z, 2.2, 16) + 0.22 * seg(p, GP.eyeEnd, 1);
-        const cs = Math.cos(rot), sn = Math.sin(rot);
-        const need = Math.max((vw * cs + vh * sn) / IW, (vw * sn + vh * cs) / IH);
-        const grow = mix(0.4, 1.1, E.out2(seg(Math.log(Z), Math.log(2.2), Math.log(6)))) + 0.14 * seg(p, GP.eyeEnd, 1);
-        const sv = need * grow;
-        const vx = mix(ex, vw / 2, seg(Z, 3, 6)), vy = mix(ey, vh / 2, seg(Z, 3, 6));
-        place(L.void, sv, VOID_C[0], VOID_C[1], vx, vy, { keep: false, rot });
-        if (full) noMask(L.void);
-        else mask(L.void, VOID_C[0], VOID_C[1], (rScreen * 0.55) / sv, rScreen / sv);
+      // Scrollposition → Bild, abschnittsweise, damit Auge und Void-Ankunft immer an derselben Stelle liegen
+      const stops = [[0, 0], [GP.calm, G.calm], [GP.fly, G.flyEnd], [GP.eye, G.eye], [GP.portal, G.portal], [GP.last, G.n - 1]];
+      let f = G.n - 1;
+      for (let i = 1; i < stops.length; i++) {
+        if (p < stops[i][0]) { f = mix(stops[i - 1][1], stops[i][1], seg(p, stops[i - 1][0], stops[i][0])); break; }
       }
-      set(s, '--vin', E.out3(seg(p, 0.74, 0.8)));
-      lines(gVoid, seg(p, 0.76, 0.86));
+      // Hochformat: vom Gesicht (rechtes Auge) zur Bildmitte, wo der Clip auf dem Auge landet
+      const fk = seg(f, G.calm, G.flyEnd);
+      const fx = tall ? mix(0.58, 0.5, fk) : 0.5, fy = tall ? mix(0.42, 0.5, fk) : 0.5;
+      // nach der Ankunft langsam weiter in die Void
+      const z = 1 + 0.12 * E.inOut(seg(p, GP.last, 1));
+      gojoSeq.draw(Math.round(f), z, fx, fy, vw / 2, vh / 2);
+      set(s, '--vin', E.out3(seg(p, 0.78, 0.84)));
+      lines(gVoid, seg(p, 0.8, 0.9));
     }
 
     /* ---------- 03 Nobara ---------- */

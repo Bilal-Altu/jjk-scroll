@@ -76,7 +76,7 @@ a { color: inherit; }
 .fs-btn i { width: 10px; height: 10px; border: 1.5px solid currentColor; border-radius: 1px; }
 
 /* ---------- 01 Sukuna ---------- */
-.hero { height: 210vh; position: relative; }
+.hero { height: 160vh; position: relative; }
 .shade-hero {
   background:
     linear-gradient(90deg, rgba(9,9,11,.72) 0%, rgba(9,9,11,0) 34%, rgba(9,9,11,0) 70%, rgba(9,9,11,.6) 100%),
@@ -107,7 +107,7 @@ a { color: inherit; }
 @keyframes cue { 0% { transform: scaleY(0); } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
 
 /* ---------- Domain Expansion ---------- */
-.domain { height: 240vh; position: relative; background: var(--night); }
+.domain { height: 180vh; position: relative; background: var(--night); }
 .domain .pin { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4vh; }
 .dk { display: flex; gap: 1.5vw; font-size: min(17vw, 30vh); line-height: 1; }
 .dk span {
@@ -120,7 +120,7 @@ a { color: inherit; }
 .dk-sub { font-size: 12px; font-weight: 600; letter-spacing: .5em; text-transform: uppercase; color: var(--muted); }
 
 /* ---------- 02 Gojo ---------- */
-.gojo { height: 780vh; position: relative; background: var(--night); }
+.gojo { height: 440vh; position: relative; background: var(--night); }
 .shade-gojo {
   background: linear-gradient(0deg, rgba(9,9,11,.75) 0%, rgba(9,9,11,0) 30%);
   opacity: var(--sh, 1);
@@ -146,7 +146,7 @@ a { color: inherit; }
 .g-copy { margin-top: 2.4vh; max-width: 320px; font-size: 14px; line-height: 1.55; color: var(--bone); opacity: .85; }
 
 /* ---------- 03 Nobara ---------- */
-.nobara { height: 440vh; position: relative; background: var(--night); }
+.nobara { height: 270vh; position: relative; background: var(--night); }
 .seqc { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .shade-nobara { background: linear-gradient(0deg, rgba(9,9,11,.82) 0%, rgba(9,9,11,0) 34%), linear-gradient(90deg, rgba(9,9,11,.35) 0%, rgba(9,9,11,0) 40%); }
 .flash {
